@@ -180,7 +180,7 @@ Sep 06 10:44:04 elastic kibana[16581]: [2025-09-06T10:44:04.785+00:00][INFO ][no
 
 13. Access Kibana web console: (MAYBE)
 
-![Kibana Login Screen](./github/1.png)
+![Kibana Login Screen](./.github/1.png)
 
 It will (maybe) ask you Enrollment token. You can generate it by running the following command:
 
@@ -209,15 +209,15 @@ root@minha-vm:/home/ubuntu# /usr/share/kibana/bin/kibana-verification-code
 Your verification code is:  707 514 
 ```
 
-![Kibana Login Screen](./github/2.png)
+![Kibana Login Screen](./.github/2.png)
 
 After that, configure Elastic button.
 
-![Install](./github/3.png)
+![Install](./.github/3.png)
 
 it will ask for username and password, use `elastic` and the password you saved during elasticsearch installation (step 5).
 
-![Kibana Login Screen](./github/4.png)
+![Kibana Login Screen](./.github/4.png)
 
 Open your browser and go to `http://<your-vm-ip>:5601` (e.g., `http://192.168.x.x:5601`)
 
@@ -355,10 +355,10 @@ ElasticAPM.stop
 
 It will show in Observability > Applications:
 
-![app](./github/6.png)
+![app](./.github/6.png)
 
-![app](./github/7.png)
+![app](./.github/7.png)
 
-![app](./github/8.png)
+![app](./.github/8.png)
 
-![app](./github/9.png)
+![app](./.github/9.png)
