@@ -39,7 +39,7 @@ Setting up elasticsearch (8.19.3) ...
 Authentication and authorization are enabled.
 TLS for the transport and HTTP layers is enabled and configured.
 
-The generated password for the elastic built-in superuser is : r0w4G_1bYPfpoBMkm*Mg
+The generated password for the elastic built-in superuser is: ShBVOqbb_tftlmGy=ZKY
 
 If this node should join an existing cluster, you can reconfigure this with
 '/usr/share/elasticsearch/bin/elasticsearch-reconfigure-node --enrollment-token <token-here>'
@@ -68,12 +68,9 @@ vim /etc/elasticsearch/elasticsearch.yml
 ```
 
 ```
-cluster.name: vm-application
-network.host: 192.168.x.x (to be reached from other VMs)
+cluster.name: elastic-vm
 http.port: 9200
 ```
-
-We are disabling the TLS/SSL for now to make it simple. You can enable it later (see ssl.md).
 
 7. Set (or limit) the JVM heap size in `/etc/elasticsearch/jvm.options` file (You can set half of your RAM, here I have 8GB RAM so I set 4GB):
 
@@ -112,7 +109,24 @@ Sep 06 10:41:02 elastic systemd[1]: Starting elasticsearch.service - Elasticsear
 Sep 06 10:41:17 elastic systemd[1]: Started elasticsearch.service - Elasticsearch.
 ```
 
-9. Update the `kibana.yml` file to set some parameters:
+9. Create credentials for Kibana to connect to Elasticsearch:
+
+```bash
+root@elastic-n2:/home/ubuntu# curl -u elastic:'ShBVOqbb_tftlmGy=ZKY' --cacert /etc/elasticsearch/certs/http_ca.crt -X POST "https://localhost:9200/_security/service/elastic/kibana/credential/token/kibana-token"
+{"created":true,"token":{"name":"kibana-token","value":"AAEAAWVsYXN0aWMva2liYW5hL2tpYmFuYS10b2tlbjpUR1ZrMHVPeFEyZXZnTVZCUDN3TXRR"}
+```
+
+10. Copy the certificates from elasticsearch to kibana:
+
+```bash
+sudo mkdir -p /etc/kibana/certs
+scp /etc/elasticsearch/certs/http_ca.crt /etc/kibana/certs/http_ca.crt
+sudo chown root:kibana /etc/kibana/certs/http_ca.crt
+sudo chmod 640 /etc/kibana/certs/http_ca.crt
+```
+
+11. Update the `kibana.yml` file to set some parameters:
+
 
 We will set the server.host and elasticsearch.hosts.
 
@@ -123,11 +137,14 @@ vim /etc/kibana/kibana.yml
 ```bash
 server.port: 5601
 server.host: "192.168.x.x"  # to be reached from others
-elasticsearch.hosts: ["https://localhost:9200"]
+elasticsearch.hosts: ["https://192.168.x.x:9200"]
 server.publicBaseUrl: http://192.168.x.x:5601
+elasticsearch.serviceAccountToken: "AAEAAWVsYXN0aWMva2liYW5hL2tpYmFuYS10b2tlbjpUR1ZrMHVPeFEyZXZnTVZCUDN3TXRR"
+elasticsearch.ssl.verificationMode: certificate
+elasticsearch.ssl.certificateAuthorities: ["/etc/kibana/certs/http_ca.crt"]
 ```
 
-10. Enable and start the kibana service:
+12. Enable and start the kibana service:
 
 ```bash
 systemctl enable kibana
@@ -161,11 +178,11 @@ Sep 06 10:44:04 elastic kibana[16581]: [2025-09-06T10:44:04.764+00:00][INFO ][ro
 Sep 06 10:44:04 elastic kibana[16581]: [2025-09-06T10:44:04.785+00:00][INFO ][node] Kibana process configured with roles: [background_tasks, ui]
 ````
 
-11. Access Kibana web console:
+13. Access Kibana web console: (MAYBE)
 
 ![Kibana Login Screen](./github/1.png)
 
-It will ask you Enrollment token. You can generate it by running the following command:
+It will (maybe) ask you Enrollment token. You can generate it by running the following command:
 
 ```bash
 /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
@@ -175,7 +192,7 @@ output:
 
 ```bash
 root@elasticapm:/home/ubuntu# /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
-eyJ2ZXIiOiI4LjE0LjAiLCJhZHIiOlsiMTkyLjE2OC4xLjIzODo5MjAwIl0sImZnciI6IjY4OTgzMTBjYzA2YmIzMzRiMGUwODAwZGQ2NTc3Yzk1ZjE0NzM3OGM0MjIyNjQwYjU3ZjgzZDE3NDMwMzhlOGMiLCJrZXkiOiJ2dFlqSDVrQlFpRjJCeENsU0VaZTprMEpaXzY2eVFON3lzRmFUUXQ3ODFnIn0=
+eyJ2ZXIiOiI4LjE0LjAiLCJhZHIiOlsiMTkyLjE2OC4xLjIzOTo5MjAwIl0sImZnciI6ImYwMzJmOWIwZDM1ZWFmYzYxODQxYTU0NDdhMDlhNjZhNDY2ZDg5MzBiNzc2MjM5MTkzNTFhZDNhY2I0MzQxYmYiLCJrZXkiOiJmaXFFSDVrQlFaSnhBczhwS2RzbDpPM3NWRHE3LU5qLUxpRDNWQ2R2TGpBIn0=
 ```
 
 You will see a modal: 
@@ -204,32 +221,22 @@ it will ask for username and password, use `elastic` and the password you saved 
 
 Open your browser and go to `http://<your-vm-ip>:5601` (e.g., `http://192.168.x.x:5601`)
 
+14. Copy the certificates from elasticsearch to apm-server:
+
 ```bash
-root@elasticapm:/home/ubuntu# curl -s -u elastic:'r0w4G_1bYPfpoBMkm*Mg' \
-  --cacert /etc/apm-server/certs/http_ca.crt \
-  https://elasticapm:9200/_security/api_key \
-  -H 'Content-Type: application/json' -d '{
-  "name": "apm-elastic",
-  "role_descriptors": {
-    "apm_server_role": {
-      "cluster": ["monitor"],
-      "index": [
-        { "names": ["apm-*","traces-apm*","metrics-apm*","logs-apm*"],
-          "privileges": ["auto_configure","create_doc","write"] },
-        { "names": [".apm-agent-configuration*"], "privileges": ["read"] }
-      ]
-    }
-  }
-}'
-{"id":"GdZeH5kBQiF2BxCliUcA","name":"apm-elastic","api_key":"AbegPaUwgLKywQUKqdf5zw","encoded":"R2RaZUg1a0JRaUYyQnhDbGlVY0E6QWJlZ1BhVXdnTEt5d1FVS3FkZjV6dw=="
+root@elasticapm:/home/ubuntu# sudo mkdir -p /etc/apm-server/certs
+root@elasticapm:/home/ubuntu# scp /etc/elasticsearch/certs/http_ca.crt /etc/apm-server/certs/http_ca.crt
+root@elasticapm:/home/ubuntu# sudo chown root:apm-server /etc/apm-server/certs/http_ca.crt
+root@elasticapm:/home/ubuntu# sudo chmod 640 /etc/apm-server/certs/http_ca.crt
 ```
 
-If you want to give full access to apm-server, you can create an API key with `all access` role:
+
+15. Now, we will install and configure apm-server.
 
 ```bash
-curl -s -u elastic:'r0w4G_1bYPfpoBMkm*Mg' \
+curl -s -u elastic:'ShBVOqbb_tftlmGy=ZKY' \
   --cacert /etc/apm-server/certs/http_ca.crt \
-  https://elasticapm:9200/_security/api_key \
+  https://localhost:9200/_security/api_key \
   -H 'Content-Type: application/json' -d '{
   "name": "apm-elastic-superuser",
   "role_descriptors": {
@@ -244,33 +251,25 @@ curl -s -u elastic:'r0w4G_1bYPfpoBMkm*Mg' \
     }
   }
 }'
+{"id":"9QK0H5kB5VLQM_8jZfNO","name":"apm-elastic-superuser","api_key":"PhWlJEywiVMV-Ybp_lReLQ""encoded":"OVFLMEg1a0I1VkxRTV84alpmTk86UGhXbEpFeXdpVk1WLVlicF9sUmVMUQ=="}
 ```
 
 
-12. Update the `apm-server.yml` file to set some parameters:
+16. Update the `apm-server.yml` file to set some parameters:
 
 ```bash
 vim /etc/apm-server/apm-server.yml
 ```
+
+get the id and api_key to set in the file.
+
+9QK0H5kB5VLQM_8jZfNO:PhWlJEywiVMV-Ybp_lReLQ
 
 use this file: [apm-server.yml](./apm-server.yml)
 
 13. Enable and start the apm-server service:
 
 Copy certificates from elasticsearch to apm-server:
-
-````bash
-root@elasticapm:/home/ubuntu# sudo find /etc/elasticsearch /usr/share/elasticsearch -name http_ca.crt
-/etc/elasticsearch/certs/http_ca.crt
-
-root@elasticapm:/home/ubuntu# sudo mkdir -p /etc/apm-server/certs
-root@elasticapm:/home/ubuntu# scp /etc/elasticsearch/certs/http_ca.crt /tmp/
-root@elasticapm:/home/ubuntu# sudo mv /tmp/http_ca.crt /etc/apm-server/certs/http_ca.crt
-root@elasticapm:/home/ubuntu# sudo chown root:apm-server /etc/apm-server/certs/http_ca.crt
-root@elasticapm:/home/ubuntu# sudo chmod 640 /etc/apm-server/certs/http_ca.crt
-root@elasticapm:/home/ubuntu# vim /etc/apm-server/apm-server.yml
-root@elasticapm:/home/ubuntu# systemctl restart apm-server
-```
 
 Then
 
@@ -334,8 +333,8 @@ gem 'elastic-apm'
 I am using the same API key created in step 11. But you should create a separated one for your application.
 
 ```yaml
-server_url: http://192.168.1.237:8200
-secret_token: 'ZWM3S0hwa0J3OWRJaENZZm9EQXo6WVJnU01hb3U0N0hOSUtLRlBKLWI0Zw=='
+server_url: http://192.168.1.240:8200
+secret_token: 'OVFLMEg1a0I1VkxRTV84alpmTk86UGhXbEpFeXdpVk1WLVlicF9sUmVMUQ=='
 service_name: 'application-name'
 environment: 'development'
 ```

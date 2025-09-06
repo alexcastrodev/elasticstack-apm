@@ -9,8 +9,8 @@ enabled: false
 
 # ---------------------------- Output to Elasticsearch -----------------------
 output.elasticsearch:
-  hosts: ["https://192.168.1.238:9200"]
-  api_key: "GdZeH5kBQiF2BxCliUcA:AbegPaUwgLKywQUKqdf5zw"
+  hosts: ["https://192.168.1.240:9200"]
+  api_key: "9QK0H5kB5VLQM_8jZfNO:PhWlJEywiVMV-Ybp_lReLQ"
 
   ssl:
     certificate_authorities: ["/etc/apm-server/certs/http_ca.crt"]
@@ -18,7 +18,7 @@ output.elasticsearch:
 
 # ------------------------------ Kibana (opcional) ---------------------------
 kibana:
-  host: "http://192.168.1.238:5601"
+  host: "http://192.168.1.240:5601"
 
 # ------------------------------ Logging -------------------------------------
 logging.level: info
