@@ -345,12 +345,20 @@ Do some navigations and use this in Rails console to see the transactions:
 
 ```ruby
 ElasticAPM.start
-
-raise "Testing APM"
-
+begin
+  1 / 0
+rescue => e
+  ElasticAPM.report(e)
+end
 ElasticAPM.stop
 ```
 
 It will show in Observability > Applications:
 
-![Kibana Login Screen](./github/6.png)
+![app](./github/6.png)
+
+![app](./github/7.png)
+
+![app](./github/8.png)
+
+![app](./github/9.png)
