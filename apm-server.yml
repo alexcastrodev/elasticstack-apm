@@ -1,0 +1,30 @@
+# ========================= APM Server Configuration =========================
+
+# ---------------------------- APM Server Intake -----------------------------
+apm-server:
+  host: "0.0.0.0:8200"
+  agent:
+    config:
+enabled: false
+
+# ---------------------------- Output to Elasticsearch -----------------------
+output.elasticsearch:
+  hosts: ["https://192.168.1.238:9200"]
+  api_key: "GdZeH5kBQiF2BxCliUcA:AbegPaUwgLKywQUKqdf5zw"
+
+  ssl:
+    certificate_authorities: ["/etc/apm-server/certs/http_ca.crt"]
+    verification_mode: certificate
+
+# ------------------------------ Kibana (opcional) ---------------------------
+kibana:
+  host: "http://192.168.1.238:5601"
+
+# ------------------------------ Logging -------------------------------------
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: /var/log/apm-server
+  name: apm-server
+  keepfiles: 7
+  permissions: 0644
